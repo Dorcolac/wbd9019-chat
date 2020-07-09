@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello world!</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <main>
+            <section id="chat">
+                <div class="bubble" v-for="(item, index) in allMessages" v-bind:key="index">
+                    <h4>{{ item.user }}</h4>
+                    <p>{{ item.msg }}</p>
+                </div>
+            </section>
+            <aside id="online">
+                <div class="user" v-for="(user, index) in onlineUsers" v-bind:key="index">
+                    <h5>{{ user.name }}</h5>
+                    <p>{{ user.status }}</p>
+                </div>
+            </aside>
+        </main>
+        <section id="type-area">
+            <input id="input" type="text" v-model="inputMessage" @keypress.enter="sendMessage">
+            <button @click="sendMessage">Send</button>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        var app = new Vue({
+            el: "#app",
+            data() {
+                return {
+                    helloMsg: "Hello there",
+                    myUsername: "",
+                    status: "",
+                    onlineUsers: [],
+                    inputMessage: "",
+                    allMessages: []
+                }
+            },
+            methods: {
+                validateUsername: function() {
+                    this.myUsername = prompt('Choose your username');
+                    if (this.myUsername == null || this.myUsername == "" || this.myUsername == " ") {
+                        this.validateUsername();
+                    }
+                },
+                sendMessage: function() {
+                    socket.emit('chat-message', {
+                        user: this.myUsername,
+                        msg: this.inputMessage
+                    })
+                    var chat = document.getElementById('chat');
+                    console.log('scrollTop ' + chat.scrollTop);
+                    console.log('scrollHeight ' + chat.scrollHeight);
+                    
+                    this.inputMessage = "";
+                },
+                scrollToBottom: function() {
+                    var chat = document.getElementById('chat');
+                    if (chat.scrollTop > chat.scrollHeight - chat.clientHeight - 400) {
+                        chat.scrollTop = chat.scrollHeight;
+                    }
+                }
+            },
+            mounted() {
+                this.validateUsername();
+                this.status = prompt('What\'s on your mind?');
+                document.getElementById('input').focus();
+
+                socket.on('connect', () => {
+                    
+                    socket.emit('new-user', {
+                        name: this.myUsername,
+                        status: this.status
+                    })
+
+                    socket.on('username-taken', data => {
+                        alert('Username ' + data + ' taken');
+                        socket.emit('new-user', {
+                            name: prompt('Pick another username'),
+                            status: this.status
+                        })
+                    })
+
+                    socket.on('new-user-online', data => {
+                        this.onlineUsers = data;
+                    })
+
+                    socket.on('send-message-all', data => {
+                        this.allMessages.push({
+                            user: data.user,
+                            msg: data.msg
+                        });
+                    })
+                })
+            },
+            updated() {
+                this.scrollToBottom()
+            }
+        })
+    </script>
+</body>
+</html>
