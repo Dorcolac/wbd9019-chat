@@ -1,0 +1,7 @@
+✓ bug fix: long words
+✓ bug fix: name already taken mistake
+- feature: users typing
+- feature: your messages on the right side
+- feature: individual message colors
+- feature: private messages
+- feature: lock accounts

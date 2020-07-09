@@ -20,6 +20,10 @@ main {
     overflow-y: scroll;
 }
 
+#chat p {
+    word-break: break-all;
+}
+
 #online {
     width: 200px;
     height: auto;

@@ -23,7 +23,8 @@
             </aside>
         </main>
         <section id="type-area">
-            <input id="input" type="text" v-model="inputMessage" @keypress.enter="sendMessage">
+            <p v-if="areTyping">Typing... <span v-for="(typer, index) in currentlyTyping" :key="index">{{ typer }}, </span></p>
+            <input id="input" type="text" v-model="inputMessage" @keydown="iAmTyping" @keypress.enter="sendMessage">
             <button @click="sendMessage">Send</button>
         </section>
     </div>
@@ -32,16 +33,19 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io();
+        var timer;
         var app = new Vue({
             el: "#app",
             data() {
                 return {
-                    helloMsg: "Hello there",
                     myUsername: "",
                     status: "",
                     onlineUsers: [],
                     inputMessage: "",
-                    allMessages: []
+                    allMessages: [],
+                    currentlyTyping: [],
+                    areTyping: false,
+                    typingTimer: 0
                 }
             },
             methods: {
@@ -50,6 +54,24 @@
                     if (this.myUsername == null || this.myUsername == "" || this.myUsername == " ") {
                         this.validateUsername();
                     }
+                },
+                iAmTyping: function() {
+                    socket.emit('user-typing', {
+                        userTyping: this.myUsername
+                    });
+                    this.typingTimer = 0;
+                    clearInterval(timer);
+                    timer = setInterval(() => {
+                        if (this.typingTimer >= 3) {
+                            socket.emit('user-not-typing', {
+                                userNotTyping: this.myUsername
+                            })
+                            this.typingTimer = 0;
+                            clearInterval(timer);
+                        } else {
+                            this.typingTimer++;
+                        }
+                    }, 300)
                 },
                 sendMessage: function() {
                     socket.emit('chat-message', {
@@ -83,14 +105,24 @@
 
                     socket.on('username-taken', data => {
                         alert('Username ' + data + ' taken');
+                        this.validateUsername();
                         socket.emit('new-user', {
-                            name: prompt('Pick another username'),
+                            name: this.myUsername,
                             status: this.status
                         })
                     })
 
                     socket.on('new-user-online', data => {
                         this.onlineUsers = data;
+                    })
+
+                    socket.on('users-typing', data => {
+                        this.currentlyTyping = data;
+                        if (this.currentlyTyping[0]) {
+                            this.areTyping = true;
+                        } else {
+                            this.areTyping = false;
+                        }
                     })
 
                     socket.on('send-message-all', data => {
