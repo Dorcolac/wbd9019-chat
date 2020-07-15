@@ -45,7 +45,6 @@ io.on('connection', (socket) => {
         if (alreadyTyping == false) {
             typing.push(data.userTyping);
         }
-        console.log(typing);
         io.emit('users-typing', typing);
     })
 
@@ -55,8 +54,19 @@ io.on('connection', (socket) => {
                 typing.splice(i, 1);
             }
         }
-        console.log(typing);
         io.emit('users-typing', typing);
+    })
+
+    socket.on('private-chat-message', (data) => {
+        for (let i = 0; i < allUsers.length; i++) {
+            if (allUsers[i].name == data.privateTo) {
+                io.to(allUsers[i].id).emit('private-message-received', {
+                    messageFrom: data.privateFrom,
+                    messageBody: data.privateWhat
+                });
+                console.log('PRIVATE', data.privateFrom, data.privateTo, data.privateWhat);
+            }
+        }
     })
 
     socket.on('chat-message', (data) => {
@@ -65,11 +75,20 @@ io.on('connection', (socket) => {
     })
 
     socket.on('disconnect', (socket) => {
+        var leftUser = null;
         for (let i = 0; i < allUsers.length; i++) {
             if (allUsers[i].id == clientId) {
+                leftUser = allUsers[i].name;
                 allUsers.splice(i, 1);
                 io.emit('new-user-online', allUsers);
             }
         }
+        for (let i = 0; i < typing.length; i++) {
+            if (typing[i] == leftUser) {
+                typing.splice(i, 1);
+                io.emit('users-typing', typing);
+            }
+        }
+
     })
 });

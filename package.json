@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "serve": "nodemon server.js"
+    "serve": "nodemon server.js",
+    "network": "ngrok http 3000"
   },
   "author": "",
   "license": "ISC",
