@@ -12,3 +12,6 @@
 - feature: lock accounts
 - feature: emojis
 - feature: text formatting (bold, italic, underline, strike-through)
+- feature: images
+- feature: password protect account
+- feature: load account from cookie
