@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 html, body {
     height: 100vh;
     overflow: hidden;
@@ -8,14 +12,19 @@ html, body {
 }
 
 #chat {
-    height: 100vh;
-    /* padding-bottom: 50px; */
+    height: calc(100vh - 46px - 24px);
     box-sizing: border-box;
     overflow-y: scroll;
+    padding-left: 10px !important;
 }
 
 #chat p {
     word-break: break-all;
+}
+
+#online {
+    height: calc(100vh - 46px - 24px);
+    padding: 10px !important;
 }
 
 .bubble {
@@ -44,6 +53,15 @@ html, body {
 .bubble.privateSentMsg {
     background: rgb(235, 255, 198);
     text-align: right;
+}
+
+#typing-area {
+    height: 24px;
+    padding-left: 10px;
+}
+
+#input-area {
+    padding-left: 10px;
 }
 
 #input-area .col {

@@ -14,7 +14,7 @@
         <v-app>
             <v-container fluid>
                 <v-row>
-                    <v-col cols="10" id="chat">
+                    <v-col cols="10" id="chat" class="pa-0 ma-0" >
                         <div class="bubble" v-for="(item, index) in allMessages" v-bind:class="styleMessage(item)" v-bind:key="index">
                             <h4>
                                 <span v-if="item.private == 'from'">From: </span>
@@ -24,24 +24,24 @@
                             <p>{{ item.msg }}</p>
                         </div>
                     </v-col>
-                    <v-col cols="2" id="online">
+                    <v-col cols="2" id="online" class="pa-0 ma-0" >
                         <div class="user" v-for="(user, index) in onlineUsers" v-bind:key="index">
                             <h5>{{ user.name }}</h5>
                             <p>{{ user.status }}</p>
                         </div>
                     </v-col>
                 </v-row>
-                <v-row>
-                    <v-col cols="12">
-                        <p v-if="areTyping">Typing... <span v-for="(typer, index) in currentlyTyping" :key="index">{{ typer }}, </span></p>
+                <v-row id="typing-area">
+                    <v-col class="pa-0 ma-0" cols="12">
+                        <p class="pa-0 ma-0"><span v-if="areTyping">Typing... </span><span v-for="(typer, index) in currentlyTyping" :key="index">{{ typer }}, </span></p>
                     </v-col>
                 </v-row>
                 <v-row id="input-area">
-                    <v-col cols="9">
-                        <v-text-field id="input" autofocus type="text" v-model="inputMessage" @keydown="iAmTyping" @keypress.enter="sendMessage"></v-text-field>
+                    <v-col class="pa-0 ma-0" cols="9">
+                        <v-text-field class="pa-0 ma-0"  id="input" autofocus type="text" v-model="inputMessage" @keydown="iAmTyping" @keypress.enter="sendMessage"></v-text-field>
                     </v-col>
-                    <v-col cols="3">
-                        <v-btn @click="sendMessage">Send</v-btn>
+                    <v-col class="pa-0 ma-0" cols="3">
+                        <v-btn class="pa-0 ma-0"  @click="sendMessage">Send</v-btn>
                     </v-col>
                 </v-row>
             </v-container>
@@ -66,10 +66,18 @@
                     allMessages: [],
                     currentlyTyping: [],
                     areTyping: false,
-                    typingTimer: 0
+                    typingTimer: 0,
+                    hasHtml: false
                 }
             },
             methods: {
+                myHtml: function() {
+                    if (this.hasHtml) {
+                        return "<span style='color: red'> THIS IS A SPAN </span>"
+                    } else {
+                        return "THIS IS NOT A SPAN"
+                    }
+                },
                 validateUsername: function() {
                     this.myUsername = prompt('Choose your username');
                     if (this.myUsername == null || this.myUsername == "" || this.myUsername.indexOf(' ') > -1) {
@@ -139,23 +147,26 @@
             },
             mounted() {
                 this.validateUsername();
-                this.status = prompt('What\'s on your mind?');
                 document.getElementById('input').focus();
 
                 socket.on('connect', () => {
                     
                     socket.emit('new-user', {
-                        name: this.myUsername,
-                        status: this.status
+                        username: this.myUsername
                     })
 
-                    socket.on('username-taken', data => {
-                        alert('Username ' + data + ' taken');
-                        this.validateUsername();
-                        socket.emit('new-user', {
-                            name: this.myUsername,
-                            status: this.status
-                        })
+                    socket.on('username-exists', data => {
+                        var login = confirm('Username ' + data + ' already exists. Press "OK" to enter password or "Cancel" to log in as another user.');
+                        if (login === true) {
+                            socket.emit('entered-password', {
+                                password: prompt('Enter password for ' + data)
+                            })
+                        } else {
+                            this.validateUsername();
+                            socket.emit('new-user', {
+                                username: this.myUsername
+                            })
+                        }
                     })
 
                     socket.on('new-user-online', data => {

@@ -3,6 +3,16 @@ var app = express();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 var port = 3000;
+var mysql = require('mysql');
+
+var dbConnection = mysql.createConnection({
+    host    :   'localhost',
+    user    :   'root',
+    password:   '',
+    database:   'ws_chat'
+})
+
+dbConnection.connect();
 
 http.listen(port, function() {
     console.log('Started WebSocket on port ' + port);
@@ -10,6 +20,7 @@ http.listen(port, function() {
 
 app.use(express.static('./public'));
 
+var DbUsers;
 var allUsers = [];
 var typing = [];
 
@@ -17,23 +28,32 @@ io.on('connection', (socket) => {
     var clientId = socket.id;
 
     socket.on('new-user', (data) => {
-        var userExists = false;
-        for (let i = 0; i < allUsers.length; i++) {
-            if (allUsers[i].name == data.name) {
-                userExists = true;
-                socket.emit('username-taken', data.name)
+        dbConnection.query('SELECT * FROM users', function(error, results) {
+            DbUsers = results;
+            console.log(DbUsers);
+            for (let i = 0; i < DbUsers.length; i++) {
+                if (DbUsers[i].username == data.username) {
+                    socket.emit('username-exists', data.username)
+                } else {
+                    console.log('disconnected');
+                    socket.disconnect();
+                    // OVDE TREBA SREDITI | UKOLIKO USERNAME NE POSTOJI U BAZI
+                }
             }
-        }
-        if (!userExists) {
-            console.log('A new user joined - ' + data.name);
-            allUsers.push({
-                name: data.name,
-                status: data.status,
-                id: clientId
-            });
-            io.emit('new-user-online', allUsers);
-        }
+        })
+        socket.on('entered-password', password => {
+            for (let i = 0; i < DbUsers.length; i++) {
+                if (DbUsers[i].username == data.username && DbUsers[i].password == password) {
+                    allUsers.push({
+                        name: data.username,
+                        id: clientId
+                    });
+                    io.emit('new-user-online', allUsers);
+                }
+            }
+        })
     })
+
 
     socket.on('user-typing', data => {
         var alreadyTyping = false;
